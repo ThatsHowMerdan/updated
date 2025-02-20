@@ -1,0 +1,66 @@
+Programı Kullanıma Açma (Dağıtım ve Çalıştırma Talimatları)
+
+Kodları başarıyla derledikten sonra, yazılımı kullanıma açmak için aşağıdaki adımları takip etmelisin.
+
+1. Gerekli Dosyaları Hazırla
+
+Aşağıdaki dosyaların eksiksiz olarak bulunduğundan emin ol:
+
+📌 Kernel-Mode Driver: Y4VIADriver.sys (*C:\Windows\System32\drivers* içine kopyala)
+📌 EFI Bootkit: Y4VIA_Bootkit.efi (*C:\EFI\Boot* içine kopyala)
+📌 GUI Uygulaması: Y4VIA_Spoofer.exe (Ana dizinde sakla)
+
+2. Kullanıcılar İçin Kurulum Talimatları
+
+1️⃣ Windows’u Test Moduna Al
+Bu işlem, imzalanmamış kernel sürücüsünün çalışmasını sağlar.
+
+bcdedit /set testsigning on
+bcdedit /set nointegritychecks on
+shutdown /r /t 0
+
+(Bilgisayar yeniden başlayacak.)
+
+2️⃣ Kernel-Mode Driver’ı Yükle
+Driver’ı manuel olarak yüklemek için CMD’yi yönetici olarak aç ve şu komutları gir:
+
+sc create Y4VIA_DRIVER binPath=C:\Windows\System32\drivers\Y4VIADriver.sys type= kernel start= demand
+sc start Y4VIA_DRIVER
+
+(Başarıyla yüklendiğini kontrol etmek için sc query Y4VIA_DRIVER komutunu çalıştır.)
+
+3️⃣ EFI Bootkit’i Aktif Et
+Secure Boot ve TPM Bypass için EFI Bootloader’ı etkinleştir:
+
+bcdedit /set {current} path \EFI\Y4VIA_Bootkit.efi
+shutdown /r /t 0
+
+(Bilgisayar tekrar yeniden başlayacak.)
+
+4️⃣ Spoofer’ı Çalıştır ve HWID Değiştir
+
+	•	Y4VIA_Spoofer.exe dosyasını yönetici olarak çalıştır.
+	•	GUI açıldığında “Spoof+Bypass” butonuna bas.
+	•	İşlem tamamlandığında şu mesaj çıkacaktır:
+"Spoof+Bypass İşlemi Başarıyla Tamamlandı Lütfen Bilgisayarı Yeniden Başlatın - by Y4VIA"
+	•	Bilgisayarı manuel olarak yeniden başlat.
+
+3. Programın Otomatik Çalışmasını Önleme
+
+Spoofer bir kez çalıştırıldıktan sonra, bilgisayar format atılana kadar değiştirilmiş HWID ile açılacak.
+
+📌 Programın tekrar çalıştırılmasını önlemek için:
+
+	•	Y4VIA_Spoofer.exe dosyasını manuel olarak sil.
+	•	Kernel driver’ı devre dışı bırakmak istersen:
+
+sc stop Y4VIA_DRIVER
+sc delete Y4VIA_DRIVER
+
+
+	•	EFI Bootkit’i kaldırmak için:
+
+bcdedit /deletevalue {current} path
+shutdown /r /t 0
+
+
