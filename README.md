@@ -2,7 +2,7 @@
 
 A. Kernel-Mode Driver’ı Derleme (Y4VIA_Spoofer_Driver.c)
 
-	1.	Windows Driver Kit (WDK) yüklü olmalı. Eğer yüklü değilse, WDK’yi Microsoft’un sitesinden indir.
+	1.	Windows Driver Kit (WDK) yüklü olmalı. Eğer yüklü değilse, WDK’yi [Microsoft’un sitesinden](https://learn.microsoft.com/tr-tr/windows-hardware/drivers/download-the-wdk) indir.
 	2.	Visual Studio’yu aç ve “Yeni Proje” oluştur.
 	3.	Proje türü olarak “Kernel Mode Driver” seç.
 	4.	Kodları projeye ekle ve aşağıdaki ayarları yap:
